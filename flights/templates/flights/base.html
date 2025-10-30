@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Аэропорт{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .nav {
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav a {
+            margin-right: 20px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+        }
+        .nav a:hover { color: #2980b9; }
+        .nav form {
+            display: inline;
+            margin: 0;
+            padding: 0;
+        }
+        .nav button {
+            background: none;
+            border: none;
+            color: #3498db;
+            cursor: pointer;
+            font-size: inherit;
+            font-weight: bold;
+            margin: 0;
+            padding: 0;
+            text-decoration: none;
+        }
+        .nav button:hover { color: #2980b9; }
+        .flight-item {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 5px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-scheduled { color: #3498db; font-weight: bold; }
+        .status-boarding { color: #f39c12; font-weight: bold; }
+        .status-departed { color: #e74c3c; font-weight: bold; }
+        .status-landed { color: #27ae60; font-weight: bold; }
+        .status-cancelled { color: #95a5a6; font-weight: bold; }
+        form { margin: 15px 0; }
+        input, select, button {
+            padding: 8px 12px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .btn:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛫 Система управления аэропортом</h1>
+    </div>
+
+    <div class="nav">
+        {% if user.is_authenticated and user.checkinagent %}
+            <!-- Меню для агента регистрации -->
+            <a href="{% url 'flights:agent_dashboard' %}">👨‍💼 Панель агента</a>
+            <a href="{% url 'flights:passenger_lookup' %}">🔍 Поиск пассажира</a>
+            <a href="{% url 'flights:flight_list' %}">🛫 Все рейсы</a>
+            <a href="/admin/">⚙️ Админка</a>
+
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">🚪 Выход ({{ user.username }})</button>
+            </form>
+
+        {% elif user.is_authenticated %}
+            <!-- Меню для админа/других пользователей -->
+            <a href="{% url 'flights:flight_list' %}">🛫 Все рейсы</a>
+            <a href="{% url 'flights:search_flights' %}">🔍 Поиск</a>
+            <a href="/admin/">⚙️ Админка</a>
+
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">🚪 Выход</button>
+            </form>
+
+        {% else %}
+            <!-- Меню для гостей -->
+            <a href="{% url 'flights:flight_list' %}">🛫 Все рейсы</a>
+            <a href="{% url 'flights:search_flights' %}">🔍 Поиск</a>
+            <a href="{% url 'login' %}">🔑 Вход для сотрудников</a>
+        {% endif %}
+    </div>
+
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>

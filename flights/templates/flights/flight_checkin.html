@@ -1,0 +1,239 @@
+{% extends 'flights/base.html' %}
+
+{% block title %}Регистрация на рейс {{ flight.number }}{% endblock %}
+
+{% block content %}
+<div style="background: linear-gradient(135deg, #ff7675 0%, #fdcb6e 100%); color: white; padding: 25px; border-radius: 10px; margin: 20px 0;">
+    <h1>📝 Регистрация на рейс {{ flight.number }}</h1>
+    <p><strong>Маршрут:</strong> {{ flight.departure_city }} → {{ flight.destination_city }}</p>
+    <p><strong>Вылет:</strong> {{ flight.departure_time|date:"d.m.Y H:i" }}</p>
+    <p><strong>Выход:</strong> {{ flight.gate }}</p>
+    <p><strong>Статус:</strong> <span class="status-{{ flight.status }}">{{ flight.get_status_display }}</span></p>
+    <p><strong>Агент:</strong> {{ agent.workstation }} ({{ agent.agent_id }})</p>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+    <div style="background: {% if message.tags == 'success' %}#27ae60{% else %}#e74c3c{% endif %}; color: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
+        {{ message }}
+    </div>
+    {% endfor %}
+{% endif %}
+
+<!-- БЫСТРЫЙ ПОИСК ПАССАЖИРОВ -->
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0;">
+    <h2>🔍 Быстрый поиск пассажиров</h2>
+
+    <form method="get" action="{% url 'flights:passenger_lookup' %}" style="display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end;">
+        <div>
+            <label><strong>Поиск по имени, фамилии или паспорту:</strong></label>
+            <input type="text" name="search" style="width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;" placeholder="Введите для поиска...">
+        </div>
+        <button type="submit" style="background: #e67e22; color: white; padding: 12px 25px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; height: fit-content;">
+            🔍 Найти
+        </button>
+    </form>
+
+    <div style="margin-top: 15px; display: flex; gap: 15px; flex-wrap: wrap;">
+        <a href="{% url 'flights:passenger_lookup' %}?search=Иван" style="background: #f8f9fa; color: #666; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 14px;">
+            Иван
+        </a>
+        <a href="{% url 'flights:passenger_lookup' %}?search=Петр" style="background: #f8f9fa; color: #666; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 14px;">
+            Петр
+        </a>
+        <a href="{% url 'flights:passenger_lookup' %}?search=Мария" style="background: #f8f9fa; color: #666; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 14px;">
+            Мария
+        </a>
+        <a href="{% url 'flights:passenger_lookup' %}?search=123" style="background: #f8f9fa; color: #666; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-size: 14px;">
+            Паспорт 123...
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 30px 0;">
+
+    <!-- Левая колонка: Регистрация существующих пассажиров -->
+    <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2>👥 Регистрация существующих пассажиров</h2>
+
+        {% if available_passengers %}
+        <form method="post">
+            {% csrf_token %}
+
+            <div style="margin-bottom: 20px;">
+                <label><strong>Выберите пассажира:</strong></label>
+                <select name="passenger_id" required style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                    <option value="">-- Выберите пассажира --</option>
+                    {% for passenger in available_passengers %}
+                    <option value="{{ passenger.id }}">
+                        {{ passenger.first_name }} {{ passenger.last_name }} (Паспорт: {{ passenger.passport_number }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label><strong>Выберите место:</strong></label>
+                <select name="seat_number" required style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                    <option value="">-- Выберите место --</option>
+                    {% for seat in available_seats %}
+                    <option value="{{ seat }}">{{ seat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" style="background: #3498db; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%;">
+                ✅ ЗАРЕГИСТРИРОВАТЬ ПАССАЖИРА
+            </button>
+        </form>
+        {% else %}
+        <div style="background: #f8f9fa; padding: 30px; border-radius: 5px; text-align: center;">
+            <h3 style="color: #27ae60;">🎉 Все пассажиры зарегистрированы!</h3>
+            <p>На этом рейсе нет пассажиров для регистрации.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Правая колонка: Создание нового пассажира -->
+    <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2>➕ Создать нового пассажира</h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <label><strong>Имя:</strong></label>
+                    <input type="text" name="new_first_name" required style="width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;" placeholder="Иван">
+                </div>
+                <div>
+                    <label><strong>Фамилия:</strong></label>
+                    <input type="text" name="new_last_name" required style="width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;" placeholder="Иванов">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label><strong>Номер паспорта:</strong></label>
+                <input type="text" name="new_passport" required style="width: 100%; padding: 12px; margin: 5px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;" placeholder="1234567890">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label><strong>Выберите место:</strong></label>
+                <select name="new_seat_number" required style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                    <option value="">-- Выберите место --</option>
+                    {% for seat in available_seats %}
+                    <option value="{{ seat }}">{{ seat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" style="background: #27ae60; color: white; padding: 15px 30px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%;">
+                🚀 СОЗДАТЬ И ЗАРЕГИСТРИРОВАТЬ
+            </button>
+        </form>
+
+        <div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 5px;">
+            <strong>💡 Подсказка:</strong>
+            Новый пассажир будет автоматически создан и зарегистрирован на выбранное место.
+        </div>
+    </div>
+</div>
+
+<!-- Зарегистрированные пассажиры -->
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0;">
+    <h2>✅ Зарегистрированные пассажиры</h2>
+    <div style="background: #e8f6f3; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <strong>Статистика:</strong>
+        Зарегистрировано: <strong>{{ registered_count }}</strong> из <strong>{{ total_capacity }}</strong>
+        (Свободно: {{ available_seats|length }})
+    </div>
+
+    {% if boarded_passengers %}
+    <div style="max-height: 400px; overflow-y: auto;">
+        {% for boarding_pass in boarded_passengers %}
+        <div style="border: 1px solid #e0e0e0; padding: 15px; margin: 10px 0; border-radius: 8px; background: #f8fff8; border-left: 4px solid #27ae60;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 8px 0; color: #2c3e50;">
+                        {{ boarding_pass.passenger.first_name }} {{ boarding_pass.passenger.last_name }}
+                    </h4>
+                    <div style="font-size: 14px; color: #666;">
+                        <strong>Паспорт:</strong> {{ boarding_pass.passenger.passport_number }}<br>
+                        <strong>Место:</strong> <span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 3px; font-weight: bold;">{{ boarding_pass.seat_number }}</span><br>
+                        <strong>Посадочный талон:</strong> {{ boarding_pass.boarding_pass_number }}<br>
+                        <strong>Выход:</strong> {{ boarding_pass.gate }}
+                    </div>
+                </div>
+                <form method="post" action="{% url 'flights:cancel_registration' boarding_pass.id %}" style="margin: 0;">
+                    {% csrf_token %}
+                    <button type="submit" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        ❌ Отменить
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="background: #f8f9fa; padding: 30px; border-radius: 5px; text-align: center;">
+        <p style="color: #666; margin: 0;">Пока нет зарегистрированных пассажиров</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Схема салона -->
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0;">
+    <h2>💺 Схема салона</h2>
+    <div style="background: #2c3e50; padding: 20px; border-radius: 8px; margin: 15px 0;">
+        <div style="color: white; text-align: center; margin-bottom: 15px; font-weight: bold;">Выход {{ flight.gate }} →</div>
+
+        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; max-width: 400px; margin: 0 auto;">
+            {% for seat in available_seats|slice:":30" %}
+            <div style="background: #27ae60; color: white; padding: 12px; text-align: center; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                {{ seat }}
+            </div>
+            {% endfor %}
+
+            {% for bp in boarded_passengers %}
+            <div style="background: #e74c3c; color: white; padding: 12px; text-align: center; border-radius: 4px; font-size: 12px; font-weight: bold;">
+                {{ bp.seat_number }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <div style="width: 20px; height: 20px; background: #27ae60; border-radius: 3px;"></div>
+            <span>Свободно</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <div style="width: 20px; height: 20px; background: #e74c3c; border-radius: 3px;"></div>
+            <span>Занято</span>
+        </div>
+    </div>
+</div>
+
+<!-- Навигация -->
+<div style="display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap;">
+    <a href="{% url 'flights:agent_dashboard' %}" style="background: #3498db; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+        ← Панель агента
+    </a>
+    <a href="{% url 'flights:flight_detail' flight.id %}" style="background: #9b59b6; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+        ℹ️ Информация о рейсе
+    </a>
+    <a href="{% url 'flights:passenger_lookup' %}" style="background: #e67e22; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+        🔍 Поиск пассажиров
+    </a>
+    <a href="/admin/flights/passenger/add/" style="background: #95a5a6; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+        ⚙️ Админка
+    </a>
+</div>
+
+<style>
+.status-scheduled { color: #3498db; font-weight: bold; }
+.status-boarding { color: #f39c12; font-weight: bold; }
+.status-departed { color: #e74c3c; font-weight: bold; }
+.status-landed { color: #27ae60; font-weight: bold; }
+</style>
+{% endblock %}

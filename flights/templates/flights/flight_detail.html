@@ -1,0 +1,153 @@
+{% extends 'flights/base.html' %}
+
+{% block title %}Рейс {{ flight.number }}{% endblock %}
+
+{% block content %}
+<!-- ЗАГОЛОВОК РЕЙСА -->
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin: 20px 0;">
+    <h1>✈️ Рейс {{ flight.number }}</h1>
+    <p><strong>Маршрут:</strong> {{ flight.departure_city }} → {{ flight.destination_city }}</p>
+    <p><strong>Вылет:</strong> {{ flight.departure_time|date:"d.m.Y H:i" }}</p>
+    <p><strong>Прибытие:</strong> {{ flight.arrival_time|date:"d.m.Y H:i" }}</p>
+    <p><strong>Выход:</strong> {{ flight.gate }}</p>
+    <p><strong>Статус:</strong> <span class="status-{{ flight.status }}">{{ flight.get_status_display }}</span></p>
+    <p><strong>Вместимость:</strong> {{ flight.capacity }} пассажиров</p>
+</div>
+
+<!-- КНОПКА РЕГИСТРАЦИИ ДЛЯ АГЕНТОВ -->
+{% if user.is_authenticated and user.checkinagent %}
+<div style="background: #27ae60; color: white; padding: 25px; border-radius: 10px; margin: 25px 0; text-align: center; border: 3px solid #2ecc71;">
+    <h2 style="margin-top: 0;">📝 СИСТЕМА РЕГИСТРАЦИИ ПАССАЖИРОВ</h2>
+    <p style="font-size: 18px; margin: 10px 0;">Агент: <strong>{{ user.checkinagent.workstation }}</strong> | ID: {{ user.checkinagent.agent_id }}</p>
+    <a href="{% url 'flights:flight_checkin' flight.id %}" class="btn" style="background: white; color: #27ae60; font-size: 20px; padding: 18px 35px; margin: 15px 0; display: inline-block;">
+        🚀 ПЕРЕЙТИ К РЕГИСТРАЦИИ
+    </a>
+    <p style="margin-top: 15px; font-size: 16px; opacity: 0.9;">
+        Регистрация пассажиров, выбор мест, выдача посадочных талонов
+    </p>
+</div>
+{% endif %}
+
+<!-- СТАТИСТИКА -->
+<div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0;">
+    <h3>📊 Статистика рейса</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+        <div style="text-align: center; padding: 15px; background: #e8f4fd; border-radius: 8px;">
+            <div style="font-size: 24px; font-weight: bold; color: #3498db;">{{ total_passengers }}</div>
+            <div>Всего пассажиров</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #e8f6f3; border-radius: 8px;">
+            <div style="font-size: 24px; font-weight: bold; color: #27ae60;">{{ registered_count }}</div>
+            <div>Зарегистрировано</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #fef9e7; border-radius: 8px;">
+            <div style="font-size: 24px; font-weight: bold; color: #f39c12;">{{ free_seats }}</div>
+            <div>Свободных мест</div>
+        </div>
+        <div style="text-align: center; padding: 15px; background: #f4ecf7; border-radius: 8px;">
+            <div style="font-size: 24px; font-weight: bold; color: #9b59b6;">{{ flight.capacity }}</div>
+            <div>Вместимость</div>
+        </div>
+    </div>
+</div>
+
+<!-- ПАССАЖИРЫ -->
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0;">
+    <h2>👥 Пассажиры рейса</h2>
+
+    {% if passenger_data %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 20px;">
+            {% for data in passenger_data %}
+            <div style="border: 2px solid {% if data.is_registered %}#27ae60{% else %}#f39c12{% endif %}; padding: 20px; border-radius: 10px; background: {% if data.is_registered %}#f8fff8{% else %}#fffbf0{% endif %};">
+                <h4 style="margin: 0 0 12px 0; color: #2c3e50;">{{ data.passenger.first_name }} {{ data.passenger.last_name }}</h4>
+                <p style="margin: 8px 0;"><strong>📇 Паспорт:</strong> {{ data.passenger.passport_number }}</p>
+                <p style="margin: 8px 0;"><strong>💺 Место:</strong> {{ data.passenger.seat_number }}</p>
+
+                {% if data.is_registered %}
+                <div style="background: #d4edda; padding: 12px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #27ae60;">
+                    <div style="font-weight: bold; color: #155724;">✅ ЗАРЕГИСТРИРОВАН</div>
+                    <div style="margin-top: 8px; font-size: 14px;">
+                        <strong>Посадочный талон:</strong> {{ data.boarding_pass.boarding_pass_number }}<br>
+                        <strong>Место посадки:</strong> {{ data.boarding_pass.seat_number }}<br>
+                        <strong>Выход:</strong> {{ data.boarding_pass.gate }}
+                    </div>
+                </div>
+                {% else %}
+                <div style="background: #fff3cd; padding: 12px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #ffc107;">
+                    <div style="font-weight: bold; color: #856404;">⏳ ОЖИДАЕТ РЕГИСТРАЦИИ</div>
+                    <div style="margin-top: 8px; font-size: 14px;">
+                        Пассажир еще не зарегистрирован на рейс
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 40px;">
+            <h3 style="color: #6c757d;">😴 На этом рейсе пока нет пассажиров</h3>
+            <p>Добавьте пассажиров через админку для тестирования регистрации</p>
+
+            {% if user.is_authenticated and user.checkinagent %}
+            <div style="margin-top: 25px;">
+                <a href="/admin/flights/passenger/add/" class="btn" style="background: #3498db; padding: 12px 25px;">
+                    ➕ Добавить пассажира через админку
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- БЫСТРЫЕ ДЕЙСТВИЯ -->
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <h3>🚀 Быстрые действия</h3>
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px;">
+        <a href="{% url 'flights:flight_list' %}" class="btn" style="background: #3498db;">
+            📋 Все рейсы
+        </a>
+
+        {% if user.is_authenticated and user.checkinagent %}
+        <a href="{% url 'flights:agent_dashboard' %}" class="btn" style="background: #9b59b6;">
+            👨‍💼 Панель агента
+        </a>
+        <a href="{% url 'flights:flight_checkin' flight.id %}" class="btn" style="background: #27ae60;">
+            📝 Регистрация пассажиров
+        </a>
+        <a href="{% url 'flights:passenger_lookup' %}" class="btn" style="background: #e67e22;">
+            🔍 Поиск пассажиров
+        </a>
+        {% endif %}
+
+        <a href="/admin/flights/flight/{{ flight.id }}/change/" class="btn" style="background: #95a5a6;">
+            ⚙️ Редактировать рейс
+        </a>
+    </div>
+</div>
+
+<style>
+.btn {
+    display: inline-block;
+    padding: 14px 24px;
+    margin: 5px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s ease;
+    font-size: 16px;
+}
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+.status-scheduled { color: #3498db; font-weight: bold; }
+.status-boarding { color: #f39c12; font-weight: bold; }
+.status-departed { color: #e74c3c; font-weight: bold; }
+.status-landed { color: #27ae60; font-weight: bold; }
+.status-cancelled { color: #95a5a6; font-weight: bold; }
+</style>
+{% endblock %}

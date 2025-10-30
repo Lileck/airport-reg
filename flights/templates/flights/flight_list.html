@@ -1,0 +1,114 @@
+{% extends 'flights/base.html' %}
+
+{% block title %}Все рейсы{% endblock %}
+
+{% block content %}
+<h2>📋 Список рейсов</h2>
+
+
+
+<!-- Форма поиска и фильтрации -->
+<form method="get" style="background: white; padding: 15px; border-radius: 5px;">
+    <input type="text" name="search" placeholder="Поиск по номеру рейса..." value="{{ search_query }}">
+    <select name="status">
+        <option value="">Все статусы</option>
+        <option value="scheduled" {% if status_filter == 'scheduled' %}selected{% endif %}>Запланирован</option>
+        <option value="boarding" {% if status_filter == 'boarding' %}selected{% endif %}>Посадка</option>
+        <option value="departed" {% if status_filter == 'departed' %}selected{% endif %}>Вылетел</option>
+        <option value="landed" {% if status_filter == 'landed' %}selected{% endif %}>Приземлился</option>
+        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Отменен</option>
+    </select>
+    <button type="submit">🔍 Найти</button>
+</form>
+
+<!-- СПИСОК РЕЙСОВ -->
+{% if flights %}
+    {% for flight in flights %}
+    <div class="flight-item">
+        <h3>
+            <a href="{% url 'flights:flight_detail' flight.id %}" style="text-decoration: none; color: #2c3e50;">
+                ✈️ Рейс {{ flight.number }}: {{ flight.departure_city }} → {{ flight.destination_city }}
+            </a>
+        </h3>
+        <p><strong>🕐 Вылет:</strong> {{ flight.departure_time|date:"d.m.Y H:i" }}</p>
+        <p><strong>🕐 Прибытие:</strong> {{ flight.arrival_time|date:"d.m.Y H:i" }}</p>
+        <p><strong>📊 Статус:</strong>
+            <span class="status-{{ flight.status }}">
+                {{ flight.get_status_display }}
+            </span>
+        </p>
+        <p><strong>🚪 Выход:</strong> {{ flight.gate }}</p>
+        <p><strong>👥 Вместимость:</strong> {{ flight.capacity }} пассажиров</p>
+
+        <!-- Для агентов - кнопка регистрации -->
+        {% if user.is_authenticated and user.checkinagent %}
+        <div style="margin-top: 10px;">
+            <a href="{% url 'flights:flight_checkin' flight.id %}" class="btn" style="background: #27ae60;">
+                📝 Регистрация пассажиров
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div style="background: white; padding: 30px; border-radius: 5px; text-align: center;">
+        <h3 style="color: #e74c3c;">❌ Рейсы не найдены</h3>
+        <p>Возможные причины:</p>
+        <ul style="text-align: left; display: inline-block; margin: 15px 0;">
+            <li>Нет рейсов в базе данных</li>
+            <li>Активен фильтр поиска</li>
+            <li>Рейсы имеют прошедшие даты</li>
+        </ul>
+        <div style="margin-top: 20px;">
+            <a href="{% url 'flights:flight_list' %}" class="btn" style="background: #3498db;">
+                🔄 Сбросить фильтры
+            </a>
+            <a href="/admin/flights/flight/add/" class="btn" style="background: #9b59b6;">
+                ➕ Добавить рейс
+            </a>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Статистика -->
+{% if flights %}
+<div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px;">
+    <strong>📊 Статистика:</strong>
+    Всего рейсов: {{ flights|length }}
+    {% if flights|length > 0 %}
+        | Первый вылет: {{ flights.0.departure_time|date:"H:i" }}
+
+    {% endif %}
+</div>
+{% endif %}
+
+<style>
+.btn {
+    display: inline-block;
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 5px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+}
+.btn:hover {
+    opacity: 0.9;
+}
+.flight-item {
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 5px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.status-scheduled { color: #3498db; }
+.status-boarding { color: #f39c12; }
+.status-departed { color: #e74c3c; }
+.status-landed { color: #27ae60; }
+.status-cancelled { color: #95a5a6; }
+</style>
+{% endblock %}

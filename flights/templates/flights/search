@@ -1,0 +1,27 @@
+{% extends 'flights/base.html' %}
+
+{% block title %}Поиск рейсов{% endblock %}
+
+{% block content %}
+<h2>🔍 Поиск рейсов по городу</h2>
+
+<form method="get" style="background: white; padding: 15px; border-radius: 5px;">
+    <input type="text" name="destination" placeholder="Введите город назначения..." value="{{ destination }}">
+    <button type="submit">🔍 Искать</button>
+</form>
+
+{% if destination %}
+    <h3>Результаты поиска для "{{ destination }}":</h3>
+    {% if flights %}
+        {% for flight in flights %}
+        <div class="flight-item">
+            <h3>✈️ Рейс {{ flight.number }} → {{ flight.destination }}</h3>
+            <p><strong>Вылет:</strong> {{ flight.departure_time|date:"d.m.Y H:i" }}</p>
+            <p><strong>Статус:</strong> <span class="status-{{ flight.status }}">{{ flight.get_status_display }}</span></p>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>Рейсы в город "{{ destination }}" не найдены.</p>
+    {% endif %}
+{% endif %}
+{% endblock %}
