@@ -2,6 +2,62 @@ from django.shortcuts import render, get_object_or_404
 from .models import Flight, Passenger, BoardingPass
 
 
+def agent_dashboard(request):
+    """Панель агента регистрации - сегодняшние рейсы"""
+    from datetime import date
+    today = date.today()
+
+    # Получаем активные рейсы на сегодня
+    active_flights = Flight.objects.filter(
+        flight_date=today,
+        is_active=True
+    ).order_by('departure_time')
+
+    print(f"DEBUG: Найдено рейсов на {today}: {active_flights.count()}")  # Для отладки
+
+    context = {
+        'active_flights': active_flights,
+        'today': today,
+        'workstation': 'Стойка 1'
+    }
+    return render(request, 'flights/agent_dashboard.html', context)
+
+
+def start_registration(request, flight_id):
+    """Начало регистрации на рейс"""
+    flight = get_object_or_404(Flight, id=flight_id)
+
+    # Здесь будет логика регистрации пассажиров
+    # Пока просто редирект на детали рейса
+    return redirect('flight_detail', flight_id=flight_id)
+
+
+def flight_checkin(request, flight_id):
+    """Страница регистрации пассажиров на рейс"""
+    flight = get_object_or_404(Flight, id=flight_id)
+
+    # Получаем пассажиров этого рейса
+    passengers = Passenger.objects.filter(flight=flight)
+
+    # Получаем уже зарегистрированных пассажиров
+    boarded_passengers = BoardingPass.objects.filter(flight=flight)
+
+    # Генерируем доступные места (простой пример)
+    total_seats = flight.available_seats or 180
+    all_seats = [f"{row}{seat}" for row in range(1, 31) for seat in ['A', 'B', 'C', 'D', 'E', 'F']]
+    taken_seats = [bp.seat_number for bp in boarded_passengers if bp.seat_number]
+    available_seats = [seat for seat in all_seats[:total_seats] if seat not in taken_seats]
+
+    context = {
+        'flight': flight,
+        'passengers': passengers,
+        'boarded_passengers': boarded_passengers,
+        'available_seats': available_seats,
+        'registered_count': boarded_passengers.count(),
+        'total_capacity': total_seats,
+    }
+    return render(request, 'flights/flight_checkin.html', context)
+
 def flight_list(request):
     """Список всех рейсов"""
     flights = Flight.objects.all().order_by('departure_time')

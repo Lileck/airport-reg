@@ -5,35 +5,66 @@
 {% block content %}
 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px; border-radius: 10px; text-align: center; margin: 20px 0;">
     <h1>👨‍💼 Панель агента регистрации</h1>
-    <p>Добро пожаловать, <strong>{{ user.username }}</strong>!</p>
-    <p>Рабочее место: <strong>{{ user.checkinagent.workstation }}</strong></p>
+    <p>Добро пожаловать!</p>
+    <p>Рабочее место: <strong>Стойка 1</strong></p>
 </div>
 
-<h2>✈️ Активные рейсы на сегодня</h2>
+<h2>✈️ Активные рейсы на сегодня ({{ today|date:"d.m.Y" }})</h2>
 
-{% if user.checkinagent.active_flights %}
-    {% for flight in user.checkinagent.active_flights %}
-    <div class="flight-item">
-        <h3>{{ flight.number }}: {{ flight.departure_city }} → {{ flight.destination_city }}</h3>
-        <p><strong>Вылет:</strong> {{ flight.departure_time|date:"H:i" }}</p>
-        <p><strong>Статус:</strong> <span class="status-{{ flight.status }}">{{ flight.get_status_display }}</span></p>
-        <a href="{% url 'flights:flight_checkin' flight.id %}" class="btn">📝 Начать регистрацию</a>
+{% if active_flights %}
+    {% for flight in active_flights %}
+    <div style="border: 1px solid #ddd; padding: 20px; margin: 15px 0; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <!-- Пробуем разные варианты названий полей -->
+        <h3 style="color: #333; margin-top: 0;">
+            Рейс <strong>{{ flight.flight_number|default:flight.number|default:"Нет номера" }}</strong>
+        </h3>
+
+        <p><strong>Направление:</strong>
+            {{ flight.destination|default:flight.destination_city|default:"Не указано" }}
+        </p>
+
+        <p><strong>Время вылета:</strong>
+            {{ flight.departure_time|time:"H:i"|default:"Не указано" }}
+        </p>
+
+        <p><strong>Дата вылета:</strong>
+            {{ flight.flight_date|date:"d.m.Y"|default:flight.departure_time|date:"d.m.Y"|default:"Не указана" }}
+        </p>
+
+        <p><strong>Свободных мест:</strong>
+            {{ flight.available_seats|default:flight.capacity|default:"0" }}
+        </p>
+
+       <p><strong>Статус:</strong>
+    {% if flight.is_active or flight.status == 'active' or flight.status == 'scheduled' or flight.status == 'boarding' %}
+        <span style="color: green; font-weight: bold;">● Активен</span>
+    {% else %}
+        <span style="color: red; font-weight: bold;">● Неактивен</span>
+    {% endif %}
+</p>
+        <!-- КНОПКА РЕГИСТРАЦИИ -->
+        <a href="{% url 'flights:flight_checkin' flight.id %}" style="background: #28a745; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 10px; font-weight: bold;">
+            📝 Начать регистрацию
+        </a>
     </div>
     {% endfor %}
 {% else %}
-    <div style="background: white; padding: 20px; border-radius: 5px; text-align: center;">
-        <p>🎉 На сегодня активных рейсов нет!</p>
-
+    <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; text-align: center; border: 2px dashed #ddd;">
+        <p style="font-size: 18px; color: #666; margin: 0;">🎉 На сегодня активных рейсов нет!</p>
+        <p style="color: #999; margin: 10px 0 0 0;">
+            <a href="/admin/flights/flight/add/" style="color: #667eea; text-decoration: none;">
+                ➕ Создать рейс через админку
+            </a>
+        </p>
     </div>
 {% endif %}
 
-<div style="margin-top: 30px; padding: 20px; background: white; border-radius: 5px;">
-    <h3>🚀 Функции агента регистрации</h3>
-    <ul>
-        <li>📝 Регистрация пассажиров на рейсы</li>
-        <li>🔍 Поиск пассажиров по имени и паспорту</li>
-        <li>🎫 Выдача посадочных талонов</li>
-
+<div style="margin-top: 30px; padding: 25px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h3 style="color: #333;">🚀 Функции агента регистрации</h3>
+    <ul style="list-style: none; padding: 0; margin: 15px 0;">
+        <li style="padding: 8px 0; border-bottom: 1px solid #eee;">✅ Регистрация пассажиров на рейсы</li>
+        <li style="padding: 8px 0; border-bottom: 1px solid #eee;">✅ Поиск пассажиров по имени и паспорту</li>
+        <li style="padding: 8px 0;">✅ Выдача посадочных талонов</li>
     </ul>
 </div>
 {% endblock %}

@@ -14,4 +14,5 @@ urlpatterns = [
     path('agent/checkin/<int:flight_id>/', views_checkin.flight_checkin, name='flight_checkin'),
     path('agent/passenger-lookup/', views_checkin.passenger_lookup, name='passenger_lookup'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+    path('flight/<int:flight_id>/start-registration/', views.start_registration, name='start_registration'),
 ]
