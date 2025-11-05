@@ -1,67 +1,102 @@
 {% extends 'flights/base.html' %}
 
+{% block title %}Поиск пассажиров{% endblock %}
+
 {% block content %}
-<div style="background: blue; color: white; padding: 30px; margin: 20px 0; border-radius: 10px;">
-    <h1>✅ ПОИСК ПАССАЖИРА РАБОТАЕТ!</h1>
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin: 20px 0;">
+    <h1>🔍 Поиск пассажиров</h1>
+    <p>Найдите пассажира по имени, фамилии или номеру паспорта</p>
 </div>
 
-<h2>🔍 Поиск пассажиров</h2>
-<form method="get">
-    <input type="text" name="search" placeholder="Имя, фамилия или паспорт" value="{{ search_query }}">
-    <button type="submit">Искать</button>
-</form>
-
-{% if passengers %}
-    <h3>Результаты поиска:</h3>
-    {% for passenger in passengers %}
-    <div style="border: 1px solid #ccc; padding: 10px; margin: 5px 0;">
-        {{ passenger.first_name }} {{ passenger.last_name }} (Паспорт: {{ passenger.passport_number }})
-    </div>
-    {% endfor %}
-{% elif search_query %}
-    <p>Пассажиры не найдены.</p>
-{% endif %}
-
-<a href="{% url 'flights:flight_list' %}">← Назад</a>
-{% endblock %}
-
-
-{% block title %}Поиск пассажира{% endblock %}
-
-
-<div style="background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); color: white; padding: 40px; border-radius: 10px; text-align: center; margin: 20px 0;">
-    <h1>🔍 Поиск пассажира</h1>
-    <p>Поиск пассажиров для регистрации на рейсы</p>
-</div>
-
-<div style="background: white; padding: 20px; border-radius: 5px; margin: 20px 0;">
-    <form method="get">
-        <input type="text" name="search" placeholder="Введите имя, фамилию или номер паспорта..."
-               value="{{ search_query }}" style="width: 300px; padding: 10px;">
-        <button type="submit" class="btn">🔍 Искать</button>
+<!-- Форма поиска -->
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0;">
+    <form method="get" style="display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: end;">
+        <div>
+            <label style="display: block; margin-bottom: 8px; font-weight: bold;">Поиск:</label>
+            <input type="text" name="search" value="{{ search_query }}"
+                   style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;"
+                   placeholder="Введите имя, фамилию или номер паспорта...">
+        </div>
+        <button type="submit" style="background: #3498db; color: white; padding: 12px 30px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; height: fit-content;">
+            🔍 Найти
+        </button>
     </form>
 </div>
 
+<!-- Результаты поиска -->
 {% if search_query %}
-    <h2>Результаты поиска для "{{ search_query }}"</h2>
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin: 20px 0;">
+    <h2>Результаты поиска: "{{ search_query }}"</h2>
 
-    {% if passengers %}
-        {% for passenger in passengers %}
-        <div class="flight-item">
-            <h3>{{ passenger.first_name }} {{ passenger.last_name }}</h3>
-            <p><strong>Паспорт:</strong> {{ passenger.passport_number }}</p>
-            <p><strong>Рейс:</strong> {{ passenger.flight.number }}</p>
-            <p><strong>Направление:</strong> {{ passenger.flight.departure_city }} → {{ passenger.flight.destination_city }}</p>
-            <a href="{% url 'flights:flight_checkin' passenger.flight.id %}" class="btn">
-                📝 Зарегистрировать на рейс {{ passenger.flight.number }}
-            </a>
+    {% if passengers_data %}
+        {% for data in passengers_data %}
+        <div style="border: 1px solid #e0e0e0; padding: 20px; margin: 15px 0; border-radius: 8px; background: #f8f9fa;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 10px 0; color: #2c3e50;">
+                        {{ data.passenger.first_name }} {{ data.passenger.last_name }}
+                    </h3>
+                    <div style="color: #666; margin-bottom: 15px;">
+                        <strong>Паспорт:</strong> {{ data.passenger.passport_number }}<br>
+                        <strong>Email:</strong> {{ data.passenger.email|default:"Не указан" }}<br>
+                        <strong>Телефон:</strong> {{ data.passenger.phone|default:"Не указан" }}
+                    </div>
+
+                    <!-- Информация о рейсе пассажира -->
+                    {% if data.passenger.flight %}
+                    <div style="background: #e8f4fd; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                        <strong>Рейс:</strong> {{ data.passenger.flight.number }}<br>
+                        <strong>Маршрут:</strong> {{ data.passenger.flight.departure_city }} → {{ data.passenger.flight.destination_city }}<br>
+                        <strong>Вылет:</strong> {{ data.passenger.flight.departure_time|date:"d.m.Y H:i" }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Информация о регистрации -->
+                    {% if data.is_registered %}
+                        <div style="background: #e8f6f3; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                            <strong style="color: #27ae60;">✅ Уже зарегистрирован на рейсы:</strong>
+                            <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                                {% for bp in data.boarding_passes %}
+                                <li>
+                                    Рейс {{ bp.flight.number }} -
+                                    {{ bp.flight.destination_city }} -
+                                    Место {{ bp.seat_number }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                            <strong style="color: #856404;">❌ Не зарегистрирован на рейсы</strong>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Кнопки действий -->
+                <div style="display: flex; flex-direction: column; gap: 10px; min-width: 200px;">
+                    {% if data.passenger.flight %}
+                    <a href="{% url 'flights:flight_checkin' data.passenger.flight.id %}"
+                       style="background: #3498db; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; text-align: center; display: block;">
+                        📝 Перейти к регистрации
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         {% endfor %}
     {% else %}
-        <div style="background: white; padding: 20px; border-radius: 5px; text-align: center;">
-            <p>❌ Пассажиры не найдены</p>
+        <div style="text-align: center; padding: 40px; color: #666;">
+            <p style="font-size: 18px;">😔 Пассажиры не найдены</p>
+            <p>Попробуйте изменить поисковый запрос</p>
         </div>
     {% endif %}
+</div>
 {% endif %}
 
-<a href="{% url 'flights:agent_dashboard' %}" class="btn">← Назад к панели агента</a>
+<!-- Навигация -->
+<div style="margin-top: 30px;">
+    <a href="{% url 'flights:agent_dashboard' %}" style="background: #6c757d; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+        ← Назад к панели агента
+    </a>
+</div>
+{% endblock %}

@@ -139,7 +139,8 @@ def flight_checkin(request, flight_id):
 @login_required
 @user_passes_test(agent_check)
 def passenger_lookup(request):
-    """Поиск пассажира для регистрации"""
+    """Поиск пассажиров с возможностью регистрации"""
+    from django.db.models import Q
     search_query = request.GET.get('search', '')
     passengers = Passenger.objects.all()
 
@@ -147,27 +148,54 @@ def passenger_lookup(request):
         passengers = passengers.filter(
             Q(first_name__icontains=search_query) |
             Q(last_name__icontains=search_query) |
-            Q(passport_number__icontains=search_query) |
-            Q(flight__number__icontains=search_query)
+            Q(passport_number__icontains=search_query)
         )
 
+    # Получаем информацию о регистрации для каждого пассажира
+    passenger_data = []
+    for passenger in passengers:
+        # Получаем все посадочные талоны пассажира
+        boarding_passes = BoardingPass.objects.filter(passenger=passenger)
+        passenger_data.append({
+            'passenger': passenger,
+            'boarding_passes': boarding_passes,
+            'is_registered': boarding_passes.exists()
+        })
+
+    # Используем правильные поля для фильтрации рейсов
+    # Вместо is_active используем status или другие доступные поля
     context = {
-        'passengers': passengers,
+        'passengers_data': passenger_data,
         'search_query': search_query,
+        'flights': Flight.objects.all().order_by('departure_time')  # Все рейсы или фильтруем по статусу
     }
     return render(request, 'flights/passenger_lookup.html', context)
 
 
-@login_required
-@user_passes_test(agent_check)
-def cancel_registration(request, boarding_pass_id):
-    """Отмена регистрации пассажира"""
-    boarding_pass = get_object_or_404(BoardingPass, id=boarding_pass_id)
-    flight_id = boarding_pass.flight.id
-
+def register_from_search(request, passenger_id):
+    """Регистрация пассажира из поиска"""
     if request.method == 'POST':
-        boarding_pass.delete()
-        messages.success(request, f'❌ Регистрация пассажира {boarding_pass.passenger} отменена!')
-        return redirect('flights:flight_checkin', flight_id=flight_id)
+        passenger = get_object_or_404(Passenger, id=passenger_id)
+        flight_id = request.POST.get('flight_id')
+        seat_number = request.POST.get('seat_number')
 
-    return redirect('flights:flight_checkin', flight_id=flight_id)
+        if flight_id and seat_number:
+            flight = get_object_or_404(Flight, id=flight_id)
+
+            # Создаем посадочный талон
+            boarding_pass, created = BoardingPass.objects.get_or_create(
+                passenger=passenger,
+                flight=flight,
+                defaults={
+                    'seat_number': seat_number,
+                    'boarding_pass_number': f"{flight.number}-{passenger.passport_number}"
+                }
+            )
+
+            if created:
+                messages.success(request,
+                                 f'Пассажир {passenger.first_name} {passenger.last_name} зарегистрирован на рейс {flight.number}')
+            else:
+                messages.info(request, f'Пассажир уже зарегистрирован на этот рейс')
+
+        return redirect('flights:passenger_lookup')
