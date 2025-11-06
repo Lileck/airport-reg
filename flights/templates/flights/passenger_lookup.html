@@ -30,57 +30,127 @@
 
     {% if passengers_data %}
         {% for data in passengers_data %}
-        <div style="border: 1px solid #e0e0e0; padding: 20px; margin: 15px 0; border-radius: 8px; background: #f8f9fa;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="border: 1px solid #e0e0e0; padding: 25px; margin: 20px 0; border-radius: 10px; background: #f8f9fa;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 30px;">
+                <!-- Левая колонка - информация о пассажире -->
                 <div style="flex: 1;">
-                    <h3 style="margin: 0 0 10px 0; color: #2c3e50;">
+                    <h3 style="margin: 0 0 15px 0; color: #2c3e50; font-size: 24px;">
                         {{ data.passenger.first_name }} {{ data.passenger.last_name }}
                     </h3>
-                    <div style="color: #666; margin-bottom: 15px;">
-                        <strong>Паспорт:</strong> {{ data.passenger.passport_number }}<br>
-                        <strong>Email:</strong> {{ data.passenger.email|default:"Не указан" }}<br>
-                        <strong>Телефон:</strong> {{ data.passenger.phone|default:"Не указан" }}
+
+                    <!-- Контактная информация -->
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3498db;">
+                        <h4 style="margin: 0 0 12px 0; color: #2c3e50;">📋 Контактная информация</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <strong>📇 Паспорт:</strong><br>
+                                <span style="font-family: monospace; font-size: 16px; color: #2c3e50;">{{ data.passenger.passport_number }}</span>
+                            </div>
+                            <div>
+                                <strong>📧 Email:</strong><br>
+                                <span style="color: #e74c3c; font-weight: 500;">{{ data.passenger.email|default:"Не указан" }}</span>
+                            </div>
+                            <div>
+                                <strong>📞 Телефон:</strong><br>
+                                <span style="color: #27ae60; font-weight: 500;">{{ data.passenger.phone|default:"Не указан" }}</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Информация о рейсе пассажира -->
+                    <!-- Информация о рейсе -->
                     {% if data.passenger.flight %}
-                    <div style="background: #e8f4fd; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                        <strong>Рейс:</strong> {{ data.passenger.flight.number }}<br>
-                        <strong>Маршрут:</strong> {{ data.passenger.flight.departure_city }} → {{ data.passenger.flight.destination_city }}<br>
-                        <strong>Вылет:</strong> {{ data.passenger.flight.departure_time|date:"d.m.Y H:i" }}
+                    <div style="background: #e8f4fd; padding: 18px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3498db;">
+                        <h4 style="margin: 0 0 12px 0; color: #2c3e50;">✈️ Информация о рейсе</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <strong>Номер рейса:</strong><br>
+                                <span style="font-size: 20px; font-weight: bold; color: #e74c3c;">{{ data.passenger.flight.number }}</span>
+                            </div>
+                            <div>
+                                <strong>Маршрут:</strong><br>
+                                {{ data.passenger.flight.departure_city }} → {{ data.passenger.flight.destination_city }}
+                            </div>
+                            <div>
+                                <strong>Вылет:</strong><br>
+                                {{ data.passenger.flight.departure_time|date:"d.m.Y H:i" }}
+                            </div>
+                            <div>
+                                <strong>Выход:</strong><br>
+                                {{ data.passenger.flight.gate|default:"Не указан" }}
+                            </div>
+                        </div>
                     </div>
                     {% endif %}
+                </div>
 
-                    <!-- Информация о регистрации -->
+                <!-- Правая колонка - информация о регистрации -->
+                <div style="min-width: 300px;">
                     {% if data.is_registered %}
-                        <div style="background: #e8f6f3; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                            <strong style="color: #27ae60;">✅ Уже зарегистрирован на рейсы:</strong>
-                            <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                                {% for bp in data.boarding_passes %}
-                                <li>
-                                    Рейс {{ bp.flight.number }} -
-                                    {{ bp.flight.destination_city }} -
-                                    Место {{ bp.seat_number }}
-                                </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% else %}
-                        <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                            <strong style="color: #856404;">❌ Не зарегистрирован на рейсы</strong>
-                        </div>
-                    {% endif %}
-                </div>
+                        {% for bp in data.boarding_passes %}
+                        <div style="background: #e8f6f3; padding: 20px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #27ae60;">
+                            <h4 style="margin: 0 0 15px 0; color: #27ae60;">✅ Информация о регистрации</h4>
 
-                <!-- Кнопки действий -->
-                <div style="display: flex; flex-direction: column; gap: 10px; min-width: 200px;">
-                    {% if data.passenger.flight %}
-                    <a href="{% url 'flights:flight_checkin' data.passenger.flight.id %}"
-                       style="background: #3498db; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; text-align: center; display: block;">
-                        📝 Перейти к регистрации
-                    </a>
+                            <div style="margin-bottom: 15px;">
+                                <strong>Рейс:</strong><br>
+                                <span style="font-size: 18px; font-weight: bold; color: #2c3e50;">{{ bp.flight.number }}</span>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <strong>Номер посадочного талона:</strong><br>
+                                <code style="background: #2c3e50; color: white; padding: 8px 12px; border-radius: 5px; font-size: 14px; display: inline-block; margin-top: 5px;">
+                                    {{ bp.boarding_pass_number|default:"Не назначен" }}
+                                </code>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <strong>Маршрут:</strong><br>
+                                {{ bp.flight.departure_city }} → {{ bp.flight.destination_city }}
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <strong>Выход:</strong><br>
+                                {{ bp.flight.gate|default:"Не указан" }}
+                            </div>
+
+                            <!-- Посадочное место - отдельный блок -->
+                            <div style="background: white; padding: 15px; border-radius: 8px; text-align: center; border: 2px dashed #27ae60;">
+                                <div style="font-size: 12px; color: #666; margin-bottom: 5px;">ПОСАДОЧНОЕ МЕСТО</div>
+                                <div style="font-size: 32px; font-weight: bold; color: #e74c3c; letter-spacing: 2px;">
+                                    {{ bp.seat_number|default:"-" }}
+                                </div>
+                            </div>
+
+                            <div style="text-align: center; margin-top: 15px;">
+                                <span style="color: #27ae60; font-weight: bold; font-size: 16px;">● Зарегистрирован</span>
+                            </div>
+
+                            <!-- Кнопка печати внутри блока регистрации -->
+                            <div style="text-align: center; margin-top: 15px;">
+                                <button onclick="printBoardingPass('{{ data.passenger.first_name }}', '{{ data.passenger.last_name }}', '{{ data.passenger.passport_number }}', '{{ bp.flight.number }}', '{{ bp.seat_number|default:"Не назначено" }}')"
+                                        style="background: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+                                    🖨️ Печать талона
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="background: #fff3cd; padding: 25px; border-radius: 8px; text-align: center; border-left: 4px solid #f39c12;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">🚫</div>
+                            <strong style="color: #856404; font-size: 16px;">Пассажир не зарегистрирован</strong><br>
+                            <small style="color: #856404;">Для регистрации перейдите на страницу рейса</small>
+                        </div>
                     {% endif %}
                 </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div style="display: flex; gap: 15px; margin-top: 20px; justify-content: flex-end;">
+                {% if data.passenger.flight %}
+                <a href="{% url 'flights:flight_checkin' data.passenger.flight.id %}"
+                   style="background: #3498db; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; text-align: center; font-weight: bold; display: inline-block;">
+                    📝 Перейти к регистрации
+                </a>
+                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -99,4 +169,59 @@
         ← Назад к панели агента
     </a>
 </div>
+
+<script>
+function printBoardingPass(firstName, lastName, passport, flightNumber, seat) {
+    // Проверяем, есть ли место
+    if (!seat || seat === 'None' || seat === 'Не назначено' || seat === '-') {
+        seat = 'НЕ НАЗНАЧЕНО';
+    }
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Посадочный талон</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    .boarding-pass { border: 2px solid #000; padding: 25px; max-width: 400px; margin: 0 auto; }
+                    .header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #000; padding-bottom: 15px; }
+                    .passenger-info { margin-bottom: 20px; line-height: 1.6; }
+                    .seat { text-align: center; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
+                    .barcode { text-align: center; margin-top: 25px; font-family: monospace; font-size: 16px; }
+                    .flight-number { font-size: 24px; font-weight: bold; color: #e74c3c; }
+                    .seat-number { font-size: 32px; font-weight: bold; color: #2c3e50; }
+                </style>
+            </head>
+            <body>
+                <div class="boarding-pass">
+                    <div class="header">
+                        <h1 style="margin: 0; font-size: 28px;">ПОСАДОЧНЫЙ ТАЛОН</h1>
+                        <div class="flight-number">${flightNumber}</div>
+                    </div>
+                    <div class="passenger-info">
+                        <strong>Пассажир:</strong> ${firstName} ${lastName}<br>
+                        <strong>Паспорт:</strong> ${passport}<br>
+                    </div>
+                    <div class="seat">
+                        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">МЕСТО</div>
+                        <div class="seat-number">${seat}</div>
+                    </div>
+                    <div class="barcode">
+                        █████████████████████<br>
+                        █████████████████████<br>
+                        █████████████████████<br>
+                        ${flightNumber} - ${passport}
+                    </div>
+                    <div style="text-align: center; margin-top: 15px; font-size: 12px; color: #666;">
+                        ${new Date().toLocaleDateString('ru-RU')}
+                    </div>
+                </div>
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+</script>
 {% endblock %}

@@ -44,6 +44,8 @@ class Passenger(models.Model):
 
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+
 class CheckInAgent(models.Model):
     user = models.OneToOneField('auth.User', on_delete=models.CASCADE, related_name='checkinagent')
     agent_id = models.CharField(max_length=20, unique=True, verbose_name="ID агента")
@@ -52,6 +54,7 @@ class CheckInAgent(models.Model):
 
     def __str__(self):
         return f"Агент {self.user.username} ({self.workstation})"
+
 
 class BoardingPass(models.Model):
     passenger = models.ForeignKey(Passenger, on_delete=models.CASCADE, verbose_name="Пассажир")
