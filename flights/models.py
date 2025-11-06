@@ -34,6 +34,7 @@ class Passenger(models.Model):
     last_name = models.CharField(max_length=50, verbose_name="Фамилия")
     passport_number = models.CharField(max_length=20, verbose_name="Номер паспорта")
     seat_number = models.CharField(max_length=5, verbose_name="Номер места")
+    phone = models.CharField(max_length=20, verbose_name="Телефон", blank=True, null=True)
 
     class Meta:
         verbose_name = "Пассажир"

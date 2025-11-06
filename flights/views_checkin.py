@@ -72,6 +72,10 @@ def flight_checkin(request, flight_id):
         if passenger_id and seat_number:
             # Регистрация существующего пассажира
             passenger = get_object_or_404(Passenger, id=passenger_id)
+            passenger_phone = request.POST.get('passenger_phone')
+            if passenger_phone:
+                passenger.phone = passenger_phone
+                passenger.save()
 
             # Проверяем, что место свободно
             if BoardingPass.objects.filter(flight=flight, seat_number=seat_number).exists():
@@ -104,7 +108,9 @@ def flight_checkin(request, flight_id):
                     first_name=new_first_name,
                     last_name=new_last_name,
                     passport_number=new_passport,
-                    seat_number=new_seat_number
+                    seat_number=new_seat_number,
+                    phone = request.POST.get('new_phone')
+
                 )
 
                 # Генерируем номер посадочного талона
